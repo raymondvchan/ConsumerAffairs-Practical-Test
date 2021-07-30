@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 import datetime
+import json
 import random
 
 app = Flask(__name__)
@@ -16,6 +17,12 @@ class Events(db.Model):
     name = db.Column(db.String(120), unique=False, nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False) # timestamp from event and not internal timestamp
     data = db.Column(db.JSON) # JSON column type to store JSON formatted data. Allows easy querying
+
+class Errors(db.Model):
+    rowid = db.Column(db.Integer, primary_key=True)
+    datetime_created = db.Column(db.DateTime, nullable=False)
+    error = db.Column(db.String(200), unique=False, nullable=False) # Error that was caught
+    data = db.Column(db.JSON) # Originating JSON data passed to API
 
 
 @app.route("/")
@@ -43,6 +50,14 @@ def the_eye():
         return "Received"
 
     else:
+        # Data Validation Failed
+        error = Errors(
+            datetime_created = datetime.datetime.now(),
+            error = 'Error Message',
+            data = json.dumps(json_data)
+        )
+        db.session.add(error)
+        db.session.commit()
         return "Failed Validation"
 
 
