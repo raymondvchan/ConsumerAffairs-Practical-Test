@@ -9,11 +9,12 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///the_eye.db'
 db = SQLAlchemy(app)
 
-# 
+# Celery Config
 app.config.update(
     CELERY_BROKER_URL='redis://localhost:6379',
     CELERY_RESULT_BACKEND='redis://localhost:6379'
 )
+
 celery = make_celery(app)
 
 # Database Model
@@ -39,9 +40,22 @@ def index():
 
 @app.route("/api/the_eye", methods=['POST'])
 def the_eye():
+    """Main endpoint to capture events"""
+    
     # retrieve json from post
     json_data = request.get_json()
 
+    # submit JSON data to celery worker
+    process_request.delay(json_data)
+    
+    # return data to client promptly to prevent clients hanging or timing out
+    return 'Received'
+
+
+@celery.task(name='tasks.process_request')
+def process_request(json_data):
+    """Celery task: takes JSON event details to process and ingest into DB"""
+    
     # Data Validation
     if json_data.get('application') and json_data.get('session_id') and json_data.get('category') and json_data.get('name') and json_data.get('timestamp') and json_data.get('data'):
         event = Events(
