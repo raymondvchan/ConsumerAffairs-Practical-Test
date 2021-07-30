@@ -13,6 +13,9 @@ Putting the service data into a database allows the analytics team query all the
 The Events.data column type of JSON was used to capture and store the "data" portion of the JSON post. I chose this because the structure at first did not seem consistent. This data type allows the DB to store any type of JSON structure and allows the analytics team to easily extract the data.
 
 Install:
+
 pip install -r requirements.txt
+
 from app import db
+
 db.create_all()
