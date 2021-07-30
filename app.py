@@ -1,5 +1,6 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
+from tasks import make_celery
 import datetime
 import json
 import random
@@ -7,6 +8,13 @@ import random
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///the_eye.db'
 db = SQLAlchemy(app)
+
+# 
+app.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379',
+    CELERY_RESULT_BACKEND='redis://localhost:6379'
+)
+celery = make_celery(app)
 
 # Database Model
 class Events(db.Model):
@@ -35,9 +43,9 @@ def the_eye():
     json_data = request.get_json()
 
     # Data Validation
-    if json_data.get('session_id') and json_data.get('category') and json_data.get('name') and json_data.get('timestamp') and json_data.get('data'):
+    if json_data.get('application') and json_data.get('session_id') and json_data.get('category') and json_data.get('name') and json_data.get('timestamp') and json_data.get('data'):
         event = Events(
-            application = f'{random.randint(1,99999999)}',
+            application = json_data['application'],
             session_id = json_data['session_id'],
             category = json_data['category'],
             name = json_data['name'],
